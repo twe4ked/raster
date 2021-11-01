@@ -6,6 +6,18 @@ mod ppm;
 use std::io::{self, BufWriter, Read, Write};
 
 #[derive(Copy, Clone, Default)]
+pub struct Vec2 {
+    x: usize,
+    y: usize,
+}
+
+impl Vec2 {
+    fn new(x: usize, y: usize) -> Self {
+        Self { x, y }
+    }
+}
+
+#[derive(Copy, Clone, Default)]
 pub struct Vec3 {
     x: u8,
     y: u8,
@@ -21,37 +33,30 @@ const WHITE: Vec3 = Vec3 {
 const COLS: usize = 1024;
 const ROWS: usize = 1024;
 
-fn line(
-    mut x0: usize,
-    mut y0: usize,
-    mut x1: usize,
-    mut y1: usize,
-    color: Vec3,
-    image: &mut [Vec3],
-) {
+fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec3]) {
     let mut transposed = false;
 
-    if (x0 as isize - x1 as isize).abs() < (y0 as isize - y1 as isize).abs() {
+    if (v0.x as isize - v1.x as isize).abs() < (v0.y as isize - v1.y as isize).abs() {
         // If the lines is steep we transpose the image
-        std::mem::swap(&mut x0, &mut y0);
-        std::mem::swap(&mut x1, &mut y1);
+        std::mem::swap(&mut v0.x, &mut v0.y);
+        std::mem::swap(&mut v1.x, &mut v1.y);
         transposed = true;
     }
 
-    if x0 > x1 {
+    if v0.x > v1.x {
         // Make it left−to−right
-        std::mem::swap(&mut x0, &mut x1);
-        std::mem::swap(&mut y0, &mut y1);
+        std::mem::swap(&mut v0.x, &mut v1.x);
+        std::mem::swap(&mut v0.y, &mut v1.y);
     }
 
-    let dx = x1 as isize - x0 as isize;
-    let dy = y1 as isize - y0 as isize;
+    let dx = v1.x as isize - v0.x as isize;
+    let dy = v1.y as isize - v0.y as isize;
 
     let derror = dy.abs() * 2;
     let mut error = 0;
 
-    let mut y = y0 as isize;
-    for x in x0..=x1 {
+    let mut y = v0.y as isize;
+    for x in v0.x..=v1.x {
         let idx = if transposed {
             idx(y as usize, x)
         } else {
@@ -61,7 +66,7 @@ fn line(
 
         error += derror;
         if error > dx {
-            y += if y1 > y0 { 1 } else { -1 };
+            y += if v1.y > v0.y { 1 } else { -1 };
             error -= dx * 2;
         }
     }
@@ -88,10 +93,8 @@ fn main() {
             let y1 = (v1.1 + 1.0) * rows as f32 / 2.0;
 
             line(
-                x0 as usize + padding,
-                y0 as usize + padding,
-                x1 as usize + padding,
-                y1 as usize + padding,
+                Vec2::new(x0 as usize + padding, y0 as usize + padding),
+                Vec2::new(x1 as usize + padding, y1 as usize + padding),
                 WHITE,
                 &mut image,
             );
