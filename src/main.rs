@@ -7,27 +7,27 @@ use std::io::{self, BufWriter, Read, Write};
 
 #[derive(Copy, Clone, Default)]
 pub struct Vec2 {
-    x: usize,
-    y: usize,
+    x: f32,
+    y: f32,
 }
 
 impl Vec2 {
-    fn new(x: usize, y: usize) -> Self {
+    fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct Vec3 {
-    x: u8,
-    y: u8,
-    z: u8,
+    x: f32,
+    y: f32,
+    z: f32,
 }
 
 const WHITE: Vec3 = Vec3 {
-    x: 255,
-    y: 255,
-    z: 255,
+    x: 255.0,
+    y: 255.0,
+    z: 255.0,
 };
 
 const COLS: usize = 1024;
@@ -56,7 +56,7 @@ fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec<Vec3>]) {
     let mut error = 0;
 
     let mut y = v0.y as isize;
-    for x in v0.x..=v1.x {
+    for x in (v0.x as usize)..=(v1.x as usize) {
         if transposed {
             image[x][y as usize] = color;
         } else {
@@ -77,23 +77,23 @@ fn main() {
 
     let mut image = vec![vec![Vec3::default(); COLS]; ROWS];
 
-    let padding = 25;
-    let cols = COLS - padding * 2;
-    let rows = ROWS - padding * 2;
+    let padding = 25.0;
+    let cols = COLS as f32 - padding * 2.0;
+    let rows = ROWS as f32 - padding * 2.0;
 
     for face in model.faces {
         for j in 0..3 {
             let v0 = model.vertices[face[j] - 1];
             let v1 = model.vertices[face[(j + 1) % 3] - 1];
 
-            let x0 = (v0.0 + 1.0) * cols as f32 / 2.0;
-            let y0 = (v0.1 + 1.0) * rows as f32 / 2.0;
-            let x1 = (v1.0 + 1.0) * cols as f32 / 2.0;
-            let y1 = (v1.1 + 1.0) * rows as f32 / 2.0;
+            let x0 = (v0.0 + 1.0) * cols / 2.0;
+            let y0 = (v0.1 + 1.0) * rows / 2.0;
+            let x1 = (v1.0 + 1.0) * cols / 2.0;
+            let y1 = (v1.1 + 1.0) * rows / 2.0;
 
             line(
-                Vec2::new(x0 as usize + padding, y0 as usize + padding),
-                Vec2::new(x1 as usize + padding, y1 as usize + padding),
+                Vec2::new(x0 + padding, y0 + padding),
+                Vec2::new(x1 + padding, y1 + padding),
                 WHITE,
                 &mut image,
             );
