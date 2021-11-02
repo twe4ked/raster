@@ -33,7 +33,7 @@ const WHITE: Vec3 = Vec3 {
 const COLS: usize = 1024;
 const ROWS: usize = 1024;
 
-fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec3]) {
+fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec<Vec3>]) {
     let mut transposed = false;
 
     if (v0.x as isize - v1.x as isize).abs() < (v0.y as isize - v1.y as isize).abs() {
@@ -57,12 +57,11 @@ fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec3]) {
 
     let mut y = v0.y as isize;
     for x in v0.x..=v1.x {
-        let idx = if transposed {
-            idx(y as usize, x)
+        if transposed {
+            image[x][y as usize] = color;
         } else {
-            idx(x, y as usize)
+            image[y as usize][x] = color;
         };
-        image[idx] = color;
 
         error += derror;
         if error > dx {
@@ -76,7 +75,7 @@ fn main() {
     let obj = read_stdin();
     let model = obj::parse(obj);
 
-    let mut image = vec![Vec3::default(); ROWS * COLS];
+    let mut image = vec![vec![Vec3::default(); COLS]; ROWS];
 
     let padding = 25;
     let cols = COLS - padding * 2;
@@ -103,14 +102,12 @@ fn main() {
 
     let mut stdout = BufWriter::new(io::stdout());
     ppm::write_header(&mut stdout, COLS, ROWS).unwrap();
-    for color in image.iter().rev() {
-        ppm::write_color(&mut stdout, color).unwrap();
+    for row in image.iter().rev() {
+        for color in row {
+            ppm::write_color(&mut stdout, color).unwrap();
+        }
     }
     stdout.flush().unwrap();
-}
-
-fn idx(x: usize, y: usize) -> usize {
-    y * COLS + x
 }
 
 fn read_stdin() -> String {
