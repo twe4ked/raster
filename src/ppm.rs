@@ -9,5 +9,5 @@ pub fn write_header(output: &mut dyn Write, width: usize, height: usize) -> io::
 
 pub fn write_color(output: &mut dyn Write, color: &Vec3) -> io::Result<()> {
     let Vec3 { x, y, z } = color;
-    writeln!(output, "{} {} {}", x, y, z)
+    writeln!(output, "{} {} {}", *x as usize, *y as usize, *z as usize)
 }
