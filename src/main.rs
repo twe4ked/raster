@@ -5,7 +5,7 @@ mod ppm;
 
 use std::io::{self, BufWriter, Read, Write};
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct Vec2 {
     x: f32,
     y: f32,
@@ -17,7 +17,7 @@ impl Vec2 {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct Vec3 {
     x: f32,
     y: f32,
