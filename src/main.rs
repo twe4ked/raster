@@ -114,7 +114,7 @@ fn main() {
 
     let light_dir = Vec3::new(0.0, 0.0, -1.0);
 
-    for face in model.faces.clone() {
+    for face in &model.faces {
         let mut screen_coords = [Vec2::default(); 3];
         let mut world_coords = [(0.0f32, 0.0, 0.0); 3];
 
