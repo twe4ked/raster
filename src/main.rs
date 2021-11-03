@@ -119,7 +119,7 @@ fn main() {
         let mut world_coords = [Vec3::default(); 3];
 
         for j in 0..3 {
-            let v = model.vertices[face[j] - 1];
+            let v = model.vertices[face[j]];
 
             screen_coords[j] = Vec2::new(
                 ((v.x + 1.0) * cols / 2.0) + padding, // x
@@ -147,8 +147,8 @@ fn main() {
 
     for face in model.faces {
         for j in 0..3 {
-            let v0 = model.vertices[face[j] - 1];
-            let v1 = model.vertices[face[(j + 1) % 3] - 1];
+            let v0 = model.vertices[face[j]];
+            let v1 = model.vertices[face[(j + 1) % 3]];
 
             let x0 = (v0.x + 1.0) * cols / 2.0;
             let y0 = (v0.y + 1.0) * rows / 2.0;

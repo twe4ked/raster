@@ -40,7 +40,8 @@ pub fn parse(input: String) -> Model {
             let f3 = parts.next().unwrap();
             let f3: usize = f3.split('/').next().unwrap().parse().unwrap();
 
-            faces.push([f1, f2, f3]);
+            // Convert to 0-indexed
+            faces.push([f1 - 1, f2 - 1, f3 - 1]);
         }
     }
 
