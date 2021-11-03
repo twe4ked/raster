@@ -12,7 +12,7 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
-    fn new(x: f32, y: f32) -> Self {
+    const fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
 }
@@ -80,7 +80,7 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    fn new(x: f32, y: f32, z: f32) -> Self {
+    const fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
 
@@ -133,11 +133,7 @@ impl Div<f32> for Vec3 {
     }
 }
 
-const WHITE: Vec3 = Vec3 {
-    x: 255.0,
-    y: 255.0,
-    z: 255.0,
-};
+const WHITE: Vec3 = Vec3::new(255.0, 255.0, 255.0);
 
 const COLS: usize = 1024;
 const ROWS: usize = 1024;
