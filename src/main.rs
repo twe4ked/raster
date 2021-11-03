@@ -116,23 +116,19 @@ fn main() {
 
     for face in &model.faces {
         let mut screen_coords = [Vec2::default(); 3];
-        let mut world_coords = [(0.0f32, 0.0, 0.0); 3];
+        let mut world_coords = [Vec3::default(); 3];
 
         for j in 0..3 {
             let v = model.vertices[face[j] - 1];
 
             screen_coords[j] = Vec2::new(
-                ((v.0 + 1.0) * cols / 2.0) + padding, // x
-                ((v.1 + 1.0) * rows / 2.0) + padding, // y
+                ((v.x + 1.0) * cols / 2.0) + padding, // x
+                ((v.y + 1.0) * rows / 2.0) + padding, // y
             );
             world_coords[j] = v;
         }
 
-        let wc0 = Vec3::new(world_coords[0].0, world_coords[0].1, world_coords[0].2);
-        let wc1 = Vec3::new(world_coords[1].0, world_coords[1].1, world_coords[1].2);
-        let wc2 = Vec3::new(world_coords[2].0, world_coords[2].1, world_coords[2].2);
-
-        let n = (wc2 - wc0) ^ (wc1 - wc0);
+        let n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
         let n = n.normalized();
         let intensity = n.dot(&light_dir);
 
@@ -154,10 +150,10 @@ fn main() {
             let v0 = model.vertices[face[j] - 1];
             let v1 = model.vertices[face[(j + 1) % 3] - 1];
 
-            let x0 = (v0.0 + 1.0) * cols / 2.0;
-            let y0 = (v0.1 + 1.0) * rows / 2.0;
-            let x1 = (v1.0 + 1.0) * cols / 2.0;
-            let y1 = (v1.1 + 1.0) * rows / 2.0;
+            let x0 = (v0.x + 1.0) * cols / 2.0;
+            let y0 = (v0.y + 1.0) * rows / 2.0;
+            let x1 = (v1.x + 1.0) * cols / 2.0;
+            let y1 = (v1.y + 1.0) * rows / 2.0;
 
             line(
                 Vec2::new(x0 + padding, y0 + padding),

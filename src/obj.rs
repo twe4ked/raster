@@ -1,7 +1,9 @@
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file
 
+use crate::vec3::Vec3;
+
 pub struct Model {
-    pub vertices: Vec<(f32, f32, f32)>,
+    pub vertices: Vec<Vec3>,
     pub faces: Vec<[usize; 3]>,
 }
 
@@ -21,7 +23,7 @@ pub fn parse(input: String) -> Model {
             let y: f32 = parts.next().unwrap().parse().unwrap();
             let z: f32 = parts.next().unwrap().parse().unwrap();
 
-            vertices.push((x, y, z));
+            vertices.push(Vec3::new(x, y, z));
         } else if line.starts_with("f ") {
             // Example:
             //      f 24/1/24 25/2/25 26/3/26
