@@ -67,7 +67,7 @@ fn barycentric(pts: [Vec2; 3], p: Vec2) -> Vec3 {
     Vec3::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z)
 }
 
-fn triangle(pts: [Vec2; 3], color: Vec3, image: &mut Image) {
+fn triangle(pts: [Vec2; 3], zbuffer: &mut [isize], color: Vec3, image: &mut Image) {
     let cols = image.cols as f32 - 1.0;
     let rows = image.rows as f32 - 1.0;
 
@@ -86,7 +86,12 @@ fn triangle(pts: [Vec2; 3], color: Vec3, image: &mut Image) {
             let p = Vec2::new(x as f32, y as f32);
             let bc_screen = barycentric(pts, p);
             if !(bc_screen.x < 0.0 || bc_screen.y < 0.0 || bc_screen.z < 0.0) {
-                image.set(p.x as usize, p.y as usize, color);
+                let z = 0;
+                let zbuffer_i = p.x as usize + p.y as usize * image.cols;
+                if zbuffer[zbuffer_i] < z as isize {
+                    zbuffer[zbuffer_i] = z as isize;
+                    image.set(p.x as usize, p.y as usize, color);
+                }
             }
         }
     }
@@ -97,6 +102,7 @@ fn main() {
     let model = obj::parse(obj);
 
     let mut image = Image::new(1024, 1024);
+    let mut zbuffer = vec![isize::MIN; image.cols * image.rows];
 
     let padding = 25.0;
     let cols = image.cols as f32 - padding * 2.0;
@@ -125,7 +131,7 @@ fn main() {
         if intensity > 0.0 {
             let color = Vec3::new(intensity * 255.0, intensity * 255.0, intensity * 255.0);
 
-            triangle(screen_coords, color, &mut image);
+            triangle(screen_coords, &mut zbuffer, color, &mut image);
         }
     }
 
