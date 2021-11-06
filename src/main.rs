@@ -1,10 +1,12 @@
 // https://github.com/ssloy/tinyrenderer/wiki/Lesson-0:-getting-started
 
+mod image;
 mod obj;
 mod ppm;
 mod vec2;
 mod vec3;
 
+use image::Image;
 use vec2::Vec2;
 use vec3::Vec3;
 
@@ -12,10 +14,7 @@ use std::io::{self, BufWriter, Read, Write};
 
 const WHITE: Vec3 = Vec3::new(255.0, 255.0, 255.0);
 
-const COLS: usize = 1024;
-const ROWS: usize = 1024;
-
-fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec<Vec3>]) {
+fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut Image) {
     let mut transposed = false;
 
     if (v0.x as isize - v1.x as isize).abs() < (v0.y as isize - v1.y as isize).abs() {
@@ -40,9 +39,9 @@ fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec<Vec3>]) {
     let mut y = v0.y as isize;
     for x in (v0.x as usize)..=(v1.x as usize) {
         if transposed {
-            image[x][y as usize] = color;
+            image.set(y as usize, x, color);
         } else {
-            image[y as usize][x] = color;
+            image.set(x, y as usize, color);
         };
 
         error += derror;
@@ -68,12 +67,12 @@ fn barycentric(pts: [Vec2; 3], p: Vec2) -> Vec3 {
     Vec3::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z)
 }
 
-fn triangle(pts: [Vec2; 3], color: Vec3, image: &mut [Vec<Vec3>]) {
-    let cols = COLS as f32;
-    let rows = ROWS as f32;
+fn triangle(pts: [Vec2; 3], color: Vec3, image: &mut Image) {
+    let cols = image.cols as f32 - 1.0;
+    let rows = image.rows as f32 - 1.0;
 
-    let clamp = Vec2::new(cols - 1.0, rows - 1.0);
-    let mut bboxmin = Vec2::new(cols - 1.0, rows - 1.0);
+    let clamp = Vec2::new(cols, rows);
+    let mut bboxmin = Vec2::new(cols, rows);
     let mut bboxmax = Vec2::new(0.0, 0.0);
     for point in &pts {
         bboxmin.x = 0.0_f32.max(bboxmin.x.min(point.x));
@@ -87,7 +86,7 @@ fn triangle(pts: [Vec2; 3], color: Vec3, image: &mut [Vec<Vec3>]) {
             let p = Vec2::new(x as f32, y as f32);
             let bc_screen = barycentric(pts, p);
             if !(bc_screen.x < 0.0 || bc_screen.y < 0.0 || bc_screen.z < 0.0) {
-                image[p.y as usize][p.x as usize] = color;
+                image.set(p.x as usize, p.y as usize, color);
             }
         }
     }
@@ -97,11 +96,11 @@ fn main() {
     let obj = read_stdin();
     let model = obj::parse(obj);
 
-    let mut image = vec![vec![Vec3::default(); COLS]; ROWS];
+    let mut image = Image::new(1024, 1024);
 
     let padding = 25.0;
-    let cols = COLS as f32 - padding * 2.0;
-    let rows = ROWS as f32 - padding * 2.0;
+    let cols = image.cols as f32 - padding * 2.0;
+    let rows = image.rows as f32 - padding * 2.0;
 
     let light_dir = Vec3::new(0.0, 0.0, -1.0);
 
@@ -150,8 +149,8 @@ fn main() {
     }
 
     let mut stdout = BufWriter::new(io::stdout());
-    ppm::write_header(&mut stdout, COLS, ROWS).unwrap();
-    for row in image.iter().rev() {
+    ppm::write_header(&mut stdout, image.cols, image.rows).unwrap();
+    for row in image.data.iter().rev() {
         for color in row {
             ppm::write_color(&mut stdout, color).unwrap();
         }
