@@ -53,51 +53,42 @@ fn line(mut v0: Vec2, mut v1: Vec2, color: Vec3, image: &mut [Vec<Vec3>]) {
     }
 }
 
-fn triangle(mut t0: Vec2, mut t1: Vec2, mut t2: Vec2, color: Vec3, image: &mut [Vec<Vec3>]) {
-    if t0.y > t1.y {
-        std::mem::swap(&mut t0, &mut t1);
+fn barycentric(pts: [Vec2; 3], p: Vec2) -> Vec3 {
+    let cross = |a: Vec3, b| a.cross(&b);
+    let u = cross(
+        Vec3::new(pts[2].x - pts[0].x, pts[1].x - pts[0].x, pts[0].x - p.x),
+        Vec3::new(pts[2].y - pts[0].y, pts[1].y - pts[0].y, pts[0].y - p.y),
+    );
+
+    // Return a negative result to discard the triangle
+    if u.z.abs() < 1.0 {
+        return Vec3::new(-1.0, 1.0, 1.0);
     }
-    if t0.y > t2.y {
-        std::mem::swap(&mut t0, &mut t2);
+
+    Vec3::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z)
+}
+
+fn triangle(pts: [Vec2; 3], color: Vec3, image: &mut [Vec<Vec3>]) {
+    let cols = COLS as f32;
+    let rows = ROWS as f32;
+
+    let clamp = Vec2::new(cols - 1.0, rows - 1.0);
+    let mut bboxmin = Vec2::new(cols - 1.0, rows - 1.0);
+    let mut bboxmax = Vec2::new(0.0, 0.0);
+    for point in &pts {
+        bboxmin.x = 0.0_f32.max(bboxmin.x.min(point.x));
+        bboxmax.x = clamp.x.min(bboxmax.x.max(point.x));
+        bboxmin.y = 0.0_f32.max(bboxmin.y.min(point.y));
+        bboxmax.y = clamp.y.min(bboxmax.y.max(point.y));
     }
-    if t1.y > t2.y {
-        std::mem::swap(&mut t1, &mut t2);
-    }
 
-    let total_height = t2.y - t0.y;
-
-    for i in 0..(total_height as usize) {
-        let second_half = i as f32 > t1.y - t0.y || t1.y == t0.y;
-
-        let segment_height = if second_half {
-            t2.y - t1.y
-        } else {
-            t1.y - t0.y
-        };
-
-        let alpha = i as f32 / total_height;
-
-        let beta = if second_half {
-            i as f32 - (t1.y - t0.y)
-        } else {
-            i as f32
-        } / segment_height;
-
-        let mut ax = (t0 + (t2 - t0) * alpha).x as usize;
-
-        let mut bx = if second_half {
-            t1 + (t2 - t1) * beta
-        } else {
-            t0 + (t1 - t0) * beta
-        }
-        .x as usize;
-
-        if ax > bx {
-            std::mem::swap(&mut ax, &mut bx);
-        }
-
-        for x in ax..=bx {
-            image[t0.y as usize + i][x] = color;
+    for x in (bboxmin.x as usize)..=(bboxmax.x as usize) {
+        for y in (bboxmin.y as usize)..=(bboxmax.y as usize) {
+            let p = Vec2::new(x as f32, y as f32);
+            let bc_screen = barycentric(pts, p);
+            if !(bc_screen.x < 0.0 || bc_screen.y < 0.0 || bc_screen.z < 0.0) {
+                image[p.y as usize][p.x as usize] = color;
+            }
         }
     }
 }
@@ -135,13 +126,7 @@ fn main() {
         if intensity > 0.0 {
             let color = Vec3::new(intensity * 255.0, intensity * 255.0, intensity * 255.0);
 
-            triangle(
-                screen_coords[0],
-                screen_coords[1],
-                screen_coords[2],
-                color,
-                &mut image,
-            );
+            triangle(screen_coords, color, &mut image);
         }
     }
 
