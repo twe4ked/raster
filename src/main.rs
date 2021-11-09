@@ -100,13 +100,22 @@ fn triangle(pts: [Vec2; 3], zbuffer: &mut [isize], color: Vec3, image: &mut Imag
 }
 
 fn main() {
-    let mut model_filename = None;
-    for argument in env::args() {
-        if let Some(a) = argument.strip_prefix("--model=") {
-            model_filename = Some(a.to_string());
+    let (model_filename, draw_lines) = {
+        let mut model_filename = None;
+        let mut lines = false;
+        for argument in env::args() {
+            if let Some(a) = argument.strip_prefix("--model=") {
+                model_filename = Some(a.to_string());
+            }
+            if argument == "--lines" {
+                lines = true;
+            }
         }
-    }
-    let model_filename = model_filename.expect("missing --model=MODEL.obj");
+        (
+            model_filename.expect("missing --model=MODEL.obj"),
+            lines,
+        )
+    };
 
     let model = {
         let mut data = Vec::new();
@@ -150,22 +159,24 @@ fn main() {
         }
     }
 
-    for face in model.faces {
-        for j in 0..3 {
-            let v0 = model.vertices[face[j]];
-            let v1 = model.vertices[face[(j + 1) % 3]];
+    if draw_lines {
+        for face in model.faces {
+            for j in 0..3 {
+                let v0 = model.vertices[face[j]];
+                let v1 = model.vertices[face[(j + 1) % 3]];
 
-            let x0 = (v0.x + 1.0) * cols / 2.0;
-            let y0 = (v0.y + 1.0) * rows / 2.0;
-            let x1 = (v1.x + 1.0) * cols / 2.0;
-            let y1 = (v1.y + 1.0) * rows / 2.0;
+                let x0 = (v0.x + 1.0) * cols / 2.0;
+                let y0 = (v0.y + 1.0) * rows / 2.0;
+                let x1 = (v1.x + 1.0) * cols / 2.0;
+                let y1 = (v1.y + 1.0) * rows / 2.0;
 
-            line(
-                Vec2::new(x0 + padding, y0 + padding),
-                Vec2::new(x1 + padding, y1 + padding),
-                WHITE,
-                &mut image,
-            );
+                line(
+                    Vec2::new(x0 + padding, y0 + padding),
+                    Vec2::new(x1 + padding, y1 + padding),
+                    WHITE,
+                    &mut image,
+                );
+            }
         }
     }
 
