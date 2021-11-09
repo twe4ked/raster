@@ -5,13 +5,11 @@ mod image;
 mod obj;
 mod ppm;
 mod tga;
-mod vec2;
-mod vec3;
+mod vec;
 
 use image::Image;
 use tga::TgaImage;
-use vec2::Vec2;
-use vec3::Vec3;
+use vec::{Vec2, Vec3};
 
 use std::env;
 use std::fs::File;
