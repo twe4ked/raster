@@ -1,5 +1,5 @@
 # Raster
 
 ```
-cargo run < models/model.obj > out.ppm
+cargo run -- --model=models/model.obj > out.ppm
 ```

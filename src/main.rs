@@ -10,6 +10,8 @@ use image::Image;
 use vec2::Vec2;
 use vec3::Vec3;
 
+use std::env;
+use std::fs::File;
 use std::io::{self, BufWriter, Read, Write};
 
 const WHITE: Vec3 = Vec3::new(255.0, 255.0, 255.0);
@@ -98,8 +100,21 @@ fn triangle(pts: [Vec2; 3], zbuffer: &mut [isize], color: Vec3, image: &mut Imag
 }
 
 fn main() {
-    let obj = read_stdin();
-    let model = obj::parse(obj);
+    let mut model_filename = None;
+    for argument in env::args() {
+        if let Some(a) = argument.strip_prefix("--model=") {
+            model_filename = Some(a.to_string());
+        }
+    }
+    let model_filename = model_filename.expect("missing --model=MODEL.obj");
+
+    let model = {
+        let mut data = Vec::new();
+        let mut f = File::open(model_filename).unwrap();
+        f.read_to_end(&mut data).unwrap();
+        let obj = String::from_utf8(data).expect("invalid input");
+        obj::parse(obj)
+    };
 
     let mut image = Image::new(1024, 1024);
     let mut zbuffer = vec![isize::MIN; image.cols * image.rows];
@@ -162,10 +177,4 @@ fn main() {
         }
     }
     stdout.flush().unwrap();
-}
-
-fn read_stdin() -> String {
-    let mut input = Vec::new();
-    io::stdin().read_to_end(&mut input).unwrap();
-    String::from_utf8(input).expect("invalid input")
 }
