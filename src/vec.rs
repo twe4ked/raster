@@ -1,4 +1,4 @@
-use std::ops::{BitXor, Div, Index, IndexMut, Mul, Sub};
+use std::ops::{Add, BitXor, Div, Index, IndexMut, Mul, Sub};
 
 pub type Vec2 = Vec<2>;
 pub type Vec3 = Vec<3>;
@@ -86,6 +86,17 @@ impl<const N: usize> Mul<f32> for Vec<N> {
     }
 }
 
+impl<const N: usize> Add<f32> for Vec<N> {
+    type Output = Vec<N>;
+
+    fn add(mut self, rhs: f32) -> Self {
+        for c in self.components.iter_mut() {
+            *c += rhs;
+        }
+        self
+    }
+}
+
 impl<const N: usize> Mul<Vec<N>> for f32 {
     type Output = Vec<N>;
 
@@ -100,6 +111,17 @@ impl<const N: usize> Sub for Vec<N> {
     fn sub(mut self, other: Self) -> Self {
         for (c, d) in self.components.iter_mut().zip(other.components) {
             *c -= d;
+        }
+        self
+    }
+}
+
+impl<const N: usize> Mul for Vec<N> {
+    type Output = Self;
+
+    fn mul(mut self, other: Self) -> Self {
+        for (c, d) in self.components.iter_mut().zip(other.components) {
+            *c *= d;
         }
         self
     }
@@ -122,5 +144,13 @@ impl<const N: usize> Div<f32> for Vec<N> {
 
     fn div(self, rhs: f32) -> Self::Output {
         (1.0 / rhs) * self
+    }
+}
+
+impl From<Vec3> for Vec2 {
+    fn from(other: Vec3) -> Self {
+        Vec2 {
+            components: [other.components[0], other.components[1]],
+        }
     }
 }
