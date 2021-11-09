@@ -3,6 +3,7 @@
 mod image;
 mod obj;
 mod ppm;
+mod tga;
 mod vec2;
 mod vec3;
 
