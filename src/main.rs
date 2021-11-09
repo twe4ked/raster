@@ -8,6 +8,7 @@ mod vec2;
 mod vec3;
 
 use image::Image;
+use tga::TgaImage;
 use vec2::Vec2;
 use vec3::Vec3;
 
@@ -70,7 +71,14 @@ fn barycentric(pts: [Vec2; 3], p: Vec2) -> Vec3 {
     Vec3::new(1.0 - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z)
 }
 
-fn triangle(pts: [Vec2; 3], zbuffer: &mut [isize], color: Vec3, image: &mut Image) {
+fn triangle(
+    pts: [Vec2; 3],
+    texture_coords: [Vec2; 3],
+    zbuffer: &mut [isize],
+    texture: &TgaImage,
+    intensity: f32,
+    image: &mut Image,
+) {
     let cols = image.cols as f32 - 1.0;
     let rows = image.rows as f32 - 1.0;
 
@@ -84,6 +92,20 @@ fn triangle(pts: [Vec2; 3], zbuffer: &mut [isize], color: Vec3, image: &mut Imag
         bboxmax.y = clamp.y.min(bboxmax.y.max(point.y));
     }
 
+    // Find the bounding box of the texture
+    let mut tbboxmin = Vec2::new(f32::MAX, f32::MAX);
+    let mut tbboxmax = Vec2::new(0.0, 0.0);
+
+    for point in &texture_coords {
+        tbboxmin.x = tbboxmin.x.min(point.x);
+        tbboxmax.x = tbboxmax.x.max(point.x);
+        tbboxmin.y = tbboxmin.y.min(point.y);
+        tbboxmax.y = tbboxmax.y.max(point.y);
+    }
+
+    let texture_width = texture.width as f32;
+    let texture_height = texture.height as f32;
+
     for x in (bboxmin.x as usize)..=(bboxmax.x as usize) {
         for y in (bboxmin.y as usize)..=(bboxmax.y as usize) {
             let p = Vec2::new(x as f32, y as f32);
@@ -93,7 +115,21 @@ fn triangle(pts: [Vec2; 3], zbuffer: &mut [isize], color: Vec3, image: &mut Imag
                 let zbuffer_i = p.x as usize + p.y as usize * image.cols;
                 if zbuffer[zbuffer_i] < z as isize {
                     zbuffer[zbuffer_i] = z as isize;
-                    image.set(p.x as usize, p.y as usize, color);
+
+                    let x_ratio = (p.x - bboxmin.x) / (bboxmax.x - bboxmin.x);
+                    let y_ratio = (p.y - bboxmin.y) / (bboxmax.y - bboxmin.y);
+                    let mut tx = (tbboxmin.x + (tbboxmax.x - tbboxmin.x) * x_ratio) * texture_width;
+                    let mut ty =
+                        (tbboxmin.y + (tbboxmax.y - tbboxmin.y) * y_ratio) * texture_height;
+
+                    // Flip the texture (the image origin bottom left)
+                    tx = texture_width - tx;
+                    ty = texture_height - ty;
+
+                    // Get the color from the texture
+                    let color = texture.pixels[&(tx as usize, ty as usize)];
+
+                    image.set(p.x as usize, p.y as usize, color * intensity);
                 }
             }
         }
@@ -101,12 +137,16 @@ fn triangle(pts: [Vec2; 3], zbuffer: &mut [isize], color: Vec3, image: &mut Imag
 }
 
 fn main() {
-    let (model_filename, draw_lines) = {
+    let (model_filename, diffuse_filename, draw_lines) = {
         let mut model_filename = None;
+        let mut diffuse_filename = None;
         let mut lines = false;
         for argument in env::args() {
             if let Some(a) = argument.strip_prefix("--model=") {
                 model_filename = Some(a.to_string());
+            }
+            if let Some(a) = argument.strip_prefix("--diffuse=") {
+                diffuse_filename = Some(a.to_string());
             }
             if argument == "--lines" {
                 lines = true;
@@ -114,6 +154,7 @@ fn main() {
         }
         (
             model_filename.expect("missing --model=MODEL.obj"),
+            diffuse_filename.expect("missing --diffuse=DIFFUSE.tga"),
             lines,
         )
     };
@@ -124,6 +165,13 @@ fn main() {
         f.read_to_end(&mut data).unwrap();
         let obj = String::from_utf8(data).expect("invalid input");
         obj::parse(obj)
+    };
+
+    let texture = {
+        let mut data = Vec::new();
+        let mut f = File::open(diffuse_filename).unwrap();
+        f.read_to_end(&mut data).unwrap();
+        tga::parse(&data)
     };
 
     let mut image = Image::new(1024, 1024);
@@ -138,6 +186,7 @@ fn main() {
     for face in &model.faces {
         let mut screen_coords = [Vec2::default(); 3];
         let mut world_coords = [Vec3::default(); 3];
+        let mut texture_coords = [Vec2::default(); 3];
 
         for j in 0..3 {
             let v = model.vertices[face[j].vertex_index];
@@ -147,6 +196,7 @@ fn main() {
                 ((v.y + 1.0) * rows / 2.0) + padding, // y
             );
             world_coords[j] = v;
+            texture_coords[j] = model.texture_vertices[face[j].texture_index]
         }
 
         let n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
@@ -154,9 +204,14 @@ fn main() {
         let intensity = n.dot(&light_dir);
 
         if intensity > 0.0 {
-            let color = Vec3::new(intensity * 255.0, intensity * 255.0, intensity * 255.0);
-
-            triangle(screen_coords, &mut zbuffer, color, &mut image);
+            triangle(
+                screen_coords,
+                texture_coords,
+                &mut zbuffer,
+                &texture,
+                intensity,
+                &mut image,
+            );
         }
     }
 
