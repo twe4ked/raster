@@ -1,10 +1,34 @@
-use std::ops::{BitXor, Div, Mul, Sub};
+use std::ops::{BitXor, Div, Index, IndexMut, Mul, Sub};
 
 #[derive(Copy, Clone, Default, Debug)]
 pub struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+impl Index<usize> for Vec3 {
+    type Output = f32;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("out of bounds"),
+        }
+    }
+}
+
+impl IndexMut<usize> for Vec3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("out of bounds"),
+        }
+    }
 }
 
 impl Vec3 {

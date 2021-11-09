@@ -1,7 +1,7 @@
 // https://en.wikipedia.org/wiki/Wavefront_.obj_file
 
-use crate::vec2::Vec2;
-use crate::vec3::Vec3;
+use crate::Vec2;
+use crate::Vec3;
 
 #[derive(Default)]
 pub struct Face {
