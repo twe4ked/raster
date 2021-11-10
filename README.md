@@ -1,5 +1,5 @@
 # Raster
 
 ```
-cargo run -- --model=models/model.obj --diffuse=textures/diffuse.tga > out.ppm
+cargo run -- --model=examples/african_head.obj --diffuse=examples/african_head_diffuse.tga > out.ppm
 ```
